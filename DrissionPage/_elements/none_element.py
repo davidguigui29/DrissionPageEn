@@ -1,0 +1,53 @@
+# -*- coding:utf-8 -*-
+"""
+@Author   : g1879
+@Contact  : g1879@qq.com
+@Copyright: (c) 2024 by g1879, Inc. All Rights Reserved.
+@License  : BSD 3-Clause.
+"""
+from .._functions.settings import Settings
+from ..errors import ElementNotFoundError
+
+
+class NoneElement(object):
+    def __init__(self, page=None, method=None, args=None):
+        if method and Settings.raise_when_ele_not_found:  # It is not automatically thrown when no method is passed in, and is handled by the caller.
+            raise ElementNotFoundError(None, method=method, arguments=args)
+
+        if page:
+            self._none_ele_value = page._none_ele_value
+            self._none_ele_return_value = page._none_ele_return_value
+        else:
+            self._none_ele_value = None
+            self._none_ele_return_value = False
+        self.method = method
+        self.args = {} if args is None else args
+        self._get = None
+
+    def __call__(self, *args, **kwargs):
+        if not self._none_ele_return_value:
+            raise ElementNotFoundError(None, self.method, self.args)
+        else:
+            return self
+
+    def __repr__(self):
+        return f'<NoneElement method={self.method}, {", ".join([f"{k}={v}" for k, v in self.args.items()])}>'
+
+    def __getattr__(self, item):
+        if not self._none_ele_return_value:
+            raise ElementNotFoundError(None, self.method, self.args)
+        elif item in ('ele', 's_ele', 'parent', 'child', 'next', 'prev', 'before', 'east', 'north', 'south', 'west',
+                      'offset', 'over', 'after', 'get_frame', 'shadow_root', 'sr'):
+            return self
+        else:
+            if item in ('size', 'link', 'css_path', 'xpath', 'comments', 'texts', 'tag', 'html', 'inner_html',
+                        'attrs', 'text', 'raw_text', 'value', 'attr', 'style', 'src', 'property'):
+                return self._none_ele_value
+            else:
+                raise ElementNotFoundError(None, self.method, self.args)
+
+    def __eq__(self, other):
+        return other is None
+
+    def __bool__(self):
+        return False
